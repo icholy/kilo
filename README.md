@@ -1,2 +1,3 @@
 # kilo
-Kilo text editor
+
+Implementing the following tutorial in Go https://viewsourcecode.org/snaptoken/kilo/

@@ -16,7 +16,7 @@ func enableRawMode() (*unix.Termios, error) {
 	}
 	original := *raw
 	raw.Iflag &^= unix.IXON
-	raw.Lflag &^= unix.ECHO | unix.ICANON | unix.ISIG
+	raw.Lflag &^= unix.ECHO | unix.ICANON | unix.IEXTEN | unix.ISIG
 	if err := unix.IoctlSetTermios(0, unix.TCSETS, raw); err != nil {
 		return nil, fmt.Errorf("failed to set termios: %v", err)
 	}

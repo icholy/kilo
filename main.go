@@ -1,9 +1,9 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
-	"unicode"
 
 	"golang.org/x/sys/unix"
 )
@@ -37,6 +37,30 @@ func controlKey(c byte) byte {
 	return c & 0b00011111
 }
 
+func editorReadKey() byte {
+	var b [1]byte
+	for {
+		n, err := unix.Read(0, b[:])
+		if n == 1 {
+			return b[0]
+		}
+		if n == -1 && err != unix.EAGAIN {
+			log.Fatalf("failed to read byte: %v", err)
+		}
+	}
+}
+
+var ErrExit = errors.New("exit")
+
+func editorProcessKeypress() error {
+	c := editorReadKey()
+	switch c {
+	case controlKey('q'):
+		return ErrExit
+	}
+	return nil
+}
+
 func main() {
 	// raw mode
 	state, err := enableRawMode()
@@ -45,19 +69,13 @@ func main() {
 	}
 	defer restoreMode(state)
 	// byte reader loop
-	b := []byte{0}
 	for {
-		if _, err := unix.Read(0, b); err != nil && err != unix.EAGAIN {
-			log.Fatalf("failed to read: %v", err)
-		}
-		c := b[0]
-		if unicode.IsPrint(rune(c)) {
-			fmt.Printf("%d ('%c')\r\n", c, c)
-		} else {
-			fmt.Printf("%d\r\n", c)
-		}
-		if c == controlKey('q') {
+		err := editorProcessKeypress()
+		if err == ErrExit {
 			break
+		}
+		if err != nil {
+			log.Fatalf("process keypress: %v", err)
 		}
 	}
 }

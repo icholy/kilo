@@ -120,7 +120,10 @@ func editorRefreshScreen() {
 
 func editorDrawRows() {
 	for y := 0; y < E.screenrows; y++ {
-		unix.Write(unix.Stdout, []byte("~\r\n"))
+		unix.Write(unix.Stdout, []byte("~"))
+		if y < E.screenrows-1 {
+			unix.Write(unix.Stdout, []byte("\r\n"))
+		}
 	}
 }
 

@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"unicode"
@@ -19,6 +20,8 @@ func enableRawMode() (*unix.Termios, error) {
 	raw.Oflag &^= unix.OPOST
 	raw.Cflag &^= unix.CS8
 	raw.Lflag &^= unix.ECHO | unix.ICANON | unix.IEXTEN | unix.ISIG
+	raw.Cc[unix.VMIN] = 0
+	raw.Cc[unix.VTIME] = 1
 	if err := unix.IoctlSetTermios(0, unix.TCSETS, raw); err != nil {
 		return nil, fmt.Errorf("failed to set termios: %v", err)
 	}
@@ -42,15 +45,18 @@ func main() {
 	// byte reader loop
 	b := make([]byte, 1)
 	for {
-		n, _ := os.Stdin.Read(b)
-		if n != 1 || b[0] == 'q' {
-			break
+		_, err := os.Stdin.Read(b)
+		if err != nil && err != io.EOF {
+			log.Print(err)
 		}
 		c := b[0]
 		if unicode.IsPrint(rune(c)) {
 			fmt.Printf("%d ('%c')\r\n", c, c)
 		} else {
 			fmt.Printf("%d\r\n", c)
+		}
+		if c == 'q' {
+			break
 		}
 	}
 }

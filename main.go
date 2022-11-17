@@ -4,9 +4,12 @@ import (
 	"bytes"
 	"fmt"
 	"log"
+	"strings"
 
 	"golang.org/x/sys/unix"
 )
+
+const version = "0.0.1"
 
 var E struct {
 	termios    unix.Termios
@@ -124,8 +127,19 @@ func editorRefreshScreen() {
 
 func editorDrawRows(b *bytes.Buffer) {
 	for y := 0; y < E.screenrows; y++ {
-		b.WriteString("~")
-		b.WriteString("\x1b[K")
+		// print welcome screen
+		if y == E.screenrows/3 {
+			welcome := fmt.Sprintf("Kilo editor -- version %s", version)
+			if len(welcome) > E.screencols {
+				welcome = welcome[:E.screencols]
+			}
+			padding := (E.screencols - len(welcome)) / 2
+			b.WriteString(strings.Repeat(" ", padding))
+			b.WriteString(welcome)
+		} else {
+			b.WriteString("~")
+		}
+		b.WriteString("\x1b[K") // clear one line
 		if y < E.screenrows-1 {
 			b.WriteString("\r\n")
 		}

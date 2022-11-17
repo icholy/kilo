@@ -16,6 +16,7 @@ func enableRawMode() (*unix.Termios, error) {
 	}
 	original := *raw
 	raw.Iflag &^= unix.ICRNL | unix.IXON
+	raw.Oflag &^= unix.OPOST
 	raw.Lflag &^= unix.ECHO | unix.ICANON | unix.IEXTEN | unix.ISIG
 	if err := unix.IoctlSetTermios(0, unix.TCSETS, raw); err != nil {
 		return nil, fmt.Errorf("failed to set termios: %v", err)
@@ -46,9 +47,9 @@ func main() {
 		}
 		c := b[0]
 		if unicode.IsPrint(rune(c)) {
-			fmt.Printf("%d ('%c')\n", c, c)
+			fmt.Printf("%d ('%c')\r\n", c, c)
 		} else {
-			fmt.Printf("%d\n", c)
+			fmt.Printf("%d\r\n", c)
 		}
 	}
 }

@@ -115,10 +115,9 @@ func editorProcessKeypress() {
 func editorRefreshScreen() {
 	var b bytes.Buffer
 	b.WriteString("\x1b[?25l") // hide cursor
-	b.WriteString("\x1b[2J") // clear screen
-	b.WriteString("\x1b[H") // put cursor at top left
+	b.WriteString("\x1b[H")    // put cursor at top left
 	editorDrawRows(&b)
-	b.WriteString("\x1b[H") // pur cursor at top left
+	b.WriteString("\x1b[H")    // pur cursor at top left
 	b.WriteString("\x1b[?25h") // show cursor
 	unix.Write(unix.Stdout, b.Bytes())
 }
@@ -126,6 +125,7 @@ func editorRefreshScreen() {
 func editorDrawRows(b *bytes.Buffer) {
 	for y := 0; y < E.screenrows; y++ {
 		b.WriteString("~")
+		b.WriteString("\x1b[K")
 		if y < E.screenrows-1 {
 			b.WriteString("\r\n")
 		}

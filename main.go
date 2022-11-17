@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"unicode"
 
 	"golang.org/x/sys/unix"
 )
@@ -41,6 +42,12 @@ func main() {
 		n, _ := os.Stdin.Read(b)
 		if n != 1 || b[0] == 'q' {
 			break
+		}
+		c := b[0]
+		if unicode.IsPrint(rune(c)) {
+			fmt.Printf("%d ('%c')\n", c, c)
+		} else {
+			fmt.Printf("%d\n", c)
 		}
 	}
 }

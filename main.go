@@ -50,9 +50,38 @@ func initEditor() {
 func getWindowSize() (rows, cols int) {
 	ws, err := unix.IoctlGetWinsize(unix.Stdout, unix.TIOCGWINSZ)
 	if err != nil {
-		die("failed to get window size: %v", err)
+		// fallback mechanism
+		if _, err := unix.Write(unix.Stdout, []byte("\x1b[999C\x1b[999B")); err != nil {
+			die("failed to get window size: %v", err)
+		}
+		return getCursorPosition()
+
 	}
 	return int(ws.Row), int(ws.Col)
+}
+
+func getCursorPosition() (row, col int) {
+	if _, err := unix.Write(unix.Stdout, []byte("\x1b[6n")); err != nil {
+		die("getCursorPosition: %v", err)
+	}
+	var buf [32]byte
+	var i int
+	for i < len(buf)-1 {
+		if n, _ := unix.Read(unix.Stdin, buf[i:i+1]); n != 1 {
+			break
+		}
+		if buf[i] == 'R' {
+			break
+		}
+		i++
+	}
+	if buf[0] != '\x1b' || buf[1] != '[' {
+		die("invalid escape sequence")
+	}
+	if n, err := fmt.Sscanf(string(buf[2:i]), "%d;%d", &row, &col); n != 2 {
+		die("failed to scan cursor pos: %v", err)
+	}
+	return row, col
 }
 
 func controlKey(c byte) byte {

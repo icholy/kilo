@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"log"
 
@@ -112,17 +113,19 @@ func editorProcessKeypress() {
 }
 
 func editorRefreshScreen() {
-	unix.Write(unix.Stdout, []byte("\x1b[2J"))
-	unix.Write(unix.Stdout, []byte("\x1b[H"))
-	editorDrawRows()
-	unix.Write(unix.Stdout, []byte("\x1b[H"))
+	var b bytes.Buffer
+	b.WriteString("\x1b[2J")
+	b.WriteString("\x1b[H")
+	editorDrawRows(&b)
+	b.WriteString("\x1b[H")
+	unix.Write(unix.Stdout, b.Bytes())
 }
 
-func editorDrawRows() {
+func editorDrawRows(b *bytes.Buffer) {
 	for y := 0; y < E.screenrows; y++ {
-		unix.Write(unix.Stdout, []byte("~"))
+		b.WriteString("~")
 		if y < E.screenrows-1 {
-			unix.Write(unix.Stdout, []byte("\r\n"))
+			b.WriteString("\r\n")
 		}
 	}
 }

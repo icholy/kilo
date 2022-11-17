@@ -20,14 +20,14 @@ func enableRawMode() (*unix.Termios, error) {
 	raw.Lflag &^= unix.ECHO | unix.ICANON | unix.IEXTEN | unix.ISIG
 	raw.Cc[unix.VMIN] = 0
 	raw.Cc[unix.VTIME] = 1
-	if err := unix.IoctlSetTermios(0, unix.TCSETS, raw); err != nil {
+	if err := unix.IoctlSetTermios(unix.Stdin, unix.TCSETS, raw); err != nil {
 		return nil, fmt.Errorf("failed to set termios: %v", err)
 	}
 	return &original, nil
 }
 
 func restoreMode(state *unix.Termios) error {
-	if err := unix.IoctlSetTermios(0, unix.TCSETS, state); err != nil {
+	if err := unix.IoctlSetTermios(unix.Stdin, unix.TCSETS, state); err != nil {
 		return fmt.Errorf("failed to restore termios: %v", err)
 	}
 	return nil
@@ -40,7 +40,7 @@ func controlKey(c byte) byte {
 func editorReadKey() byte {
 	var b [1]byte
 	for {
-		n, err := unix.Read(0, b[:])
+		n, err := unix.Read(unix.Stdin, b[:])
 		if n == 1 {
 			return b[0]
 		}
@@ -62,8 +62,13 @@ func editorProcessKeypress() error {
 }
 
 func editorRefreshScreen() error {
-	_, err := unix.Write(1, []byte("\x1b[2J"))
-	return err
+	if _, err := unix.Write(unix.Stdout, []byte("\x1b[2J")); err != nil {
+		return err
+	}
+	if _, err := unix.Write(1, []byte("\x1b[H")); err != nil {
+		return err
+	}
+	return nil
 }
 
 func main() {

@@ -7,15 +7,18 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-var originalRaw *unix.Termios
+var E struct {
+	termios    unix.Termios
+	screenrows int
+	screencols int
+}
 
 func enableRawMode() {
 	raw, err := unix.IoctlGetTermios(0, unix.TCGETS)
 	if err != nil {
 		log.Fatalf("failed to get termios: %v", err)
 	}
-	clone := *raw
-	originalRaw = &clone
+	E.termios = *raw
 	raw.Iflag &^= unix.BRKINT | unix.ICRNL | unix.INPCK | unix.ISTRIP | unix.IXON
 	raw.Oflag &^= unix.OPOST
 	raw.Cflag &^= unix.CS8
@@ -28,7 +31,7 @@ func enableRawMode() {
 }
 
 func restoreMode() {
-	if err := unix.IoctlSetTermios(unix.Stdin, unix.TCSETS, originalRaw); err != nil {
+	if err := unix.IoctlSetTermios(unix.Stdin, unix.TCSETS, &E.termios); err != nil {
 		log.Fatalf("failed to restore termios: %v", err)
 	}
 }
@@ -38,6 +41,18 @@ func die(format string, args ...any) {
 	msg := fmt.Sprintf(format, args...)
 	unix.Write(unix.Stdout, []byte(msg))
 	unix.Exit(0)
+}
+
+func initEditor() {
+	E.screenrows, E.screencols = getWindowSize()
+}
+
+func getWindowSize() (rows, cols int) {
+	ws, err := unix.IoctlGetWinsize(unix.Stdout, unix.TIOCGWINSZ)
+	if err != nil {
+		die("failed to get window size: %v", err)
+	}
+	return int(ws.Row), int(ws.Col)
 }
 
 func controlKey(c byte) byte {
@@ -75,7 +90,7 @@ func editorRefreshScreen() {
 }
 
 func editorDrawRows() {
-	for y := 0; y < 24; y++ {
+	for y := 0; y < E.screenrows; y++ {
 		unix.Write(unix.Stdout, []byte("~\r\n"))
 	}
 }
@@ -83,6 +98,7 @@ func editorDrawRows() {
 func main() {
 	// raw mode
 	enableRawMode()
+	initEditor()
 	defer restoreMode()
 	// byte reader loop
 	for {

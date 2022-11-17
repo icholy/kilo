@@ -61,6 +61,11 @@ func editorProcessKeypress() error {
 	return nil
 }
 
+func editorRefreshScreen() error {
+	_, err := unix.Write(1, []byte("\x1b[2J"))
+	return err
+}
+
 func main() {
 	// raw mode
 	state, err := enableRawMode()
@@ -70,6 +75,9 @@ func main() {
 	defer restoreMode(state)
 	// byte reader loop
 	for {
+		if err := editorRefreshScreen(); err != nil {
+			log.Fatalf("refresh screen: %v", err)
+		}
 		err := editorProcessKeypress()
 		if err == ErrExit {
 			break

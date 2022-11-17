@@ -33,6 +33,10 @@ func restoreMode(state *unix.Termios) error {
 	return nil
 }
 
+func controlKey(c byte) byte {
+	return c & 0x1f
+}
+
 func main() {
 	// raw mode
 	state, err := enableRawMode()
@@ -41,7 +45,7 @@ func main() {
 	}
 	defer restoreMode(state)
 	// byte reader loop
-	b := make([]byte, 1)
+	b := []byte{0}
 	for {
 		if _, err := unix.Read(0, b); err != nil && err != unix.EAGAIN {
 			log.Fatalf("failed to read: %v", err)
@@ -52,7 +56,7 @@ func main() {
 		} else {
 			fmt.Printf("%d\r\n", c)
 		}
-		if c == 'q' {
+		if (c == controlKey('q')) {
 			break
 		}
 	}

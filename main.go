@@ -70,6 +70,14 @@ func editorProcessKeypress() {
 func editorRefreshScreen() {
 	unix.Write(unix.Stdout, []byte("\x1b[2J"))
 	unix.Write(unix.Stdout, []byte("\x1b[H"))
+	editorDrawRows()
+	unix.Write(unix.Stdout, []byte("\x1b[H"))
+}
+
+func editorDrawRows() {
+	for y := 0; y < 24; y++ {
+		unix.Write(unix.Stdout, []byte("~\r\n"))
+	}
 }
 
 func main() {

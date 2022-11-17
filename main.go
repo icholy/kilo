@@ -2,9 +2,7 @@ package main
 
 import (
 	"fmt"
-	"io"
 	"log"
-	"os"
 	"unicode"
 
 	"golang.org/x/sys/unix"
@@ -45,9 +43,8 @@ func main() {
 	// byte reader loop
 	b := make([]byte, 1)
 	for {
-		_, err := os.Stdin.Read(b)
-		if err != nil && err != io.EOF {
-			log.Print(err)
+		if _, err := unix.Read(0, b); err != nil && err != unix.EAGAIN {
+			log.Fatalf("failed to read: %v", err)
 		}
 		c := b[0]
 		if unicode.IsPrint(rune(c)) {

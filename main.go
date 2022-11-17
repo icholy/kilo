@@ -26,9 +26,9 @@ func main() {
 		}
 		c := b[0]
 		if unicode.IsPrint(rune(c)) {
-			fmt.Printf("%d ('%c')\n\r", c, c)
+			fmt.Printf("%d ('%c')\r\n", c, c)
 		} else {
-			fmt.Printf("%d\n\r", c)
+			fmt.Printf("%d\r\n", c)
 		}
 	}
 }

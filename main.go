@@ -34,7 +34,7 @@ func restoreMode(state *unix.Termios) error {
 }
 
 func controlKey(c byte) byte {
-	return c & 0x1f
+	return c & 0b00011111
 }
 
 func main() {
@@ -56,7 +56,7 @@ func main() {
 		} else {
 			fmt.Printf("%d\r\n", c)
 		}
-		if (c == controlKey('q')) {
+		if c == controlKey('q') {
 			break
 		}
 	}

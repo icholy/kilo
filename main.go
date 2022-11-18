@@ -90,24 +90,24 @@ func getCursorPosition() (row, col int) {
 	return row, col
 }
 
-func controlKey(c byte) byte {
-	return c & 0b00011111
+func controlKey(c byte) int {
+	return int(c & 0b00011111)
 }
 
 const (
-	ArrowLeft byte = iota + 250
+	ArrowLeft = iota + 1000
 	ArrowRight
 	ArrowUp
 	ArrowDown
 )
 
-func editorReadKey() byte {
-	var c byte
+func editorReadKey() int {
+	var c int
 	var b [1]byte
 	for {
 		n, err := unix.Read(unix.Stdin, b[:])
 		if n == 1 {
-			c = b[0]
+			c = int(b[0])
 			break
 		}
 		if n == -1 && err != unix.EAGAIN {
@@ -151,7 +151,7 @@ func editorProcessKeypress() {
 	}
 }
 
-func editorMoveCustor(c byte) {
+func editorMoveCustor(c int) {
 	switch c {
 	case ArrowUp:
 		E.cy--

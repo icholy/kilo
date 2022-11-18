@@ -154,13 +154,21 @@ func editorProcessKeypress() {
 func editorMoveCustor(c int) {
 	switch c {
 	case ArrowUp:
-		E.cy--
+		if E.cy > 0 {
+			E.cy--
+		}
 	case ArrowDown:
-		E.cy++
+		if E.cy < E.screenrows {
+			E.cy++
+		}
 	case ArrowLeft:
-		E.cx--
+		if E.cx > 0 {
+			E.cx--
+		}
 	case ArrowRight:
+		if E.cx < E.screencols {
 		E.cx++
+	}
 	}
 }
 

@@ -94,17 +94,49 @@ func controlKey(c byte) byte {
 	return c & 0b00011111
 }
 
+const (
+	ArrowLeft byte = iota + 250
+	ArrowRight
+	ArrowUp
+	ArrowDown
+)
+
 func editorReadKey() byte {
+	var c byte
 	var b [1]byte
 	for {
 		n, err := unix.Read(unix.Stdin, b[:])
 		if n == 1 {
-			return b[0]
+			c = b[0]
+			break
 		}
 		if n == -1 && err != unix.EAGAIN {
 			die("read: %v", err)
 		}
 	}
+	// handle escale sequences
+	if c == '\x1b' {
+		var seq [3]byte
+		if n, _ := unix.Read(unix.Stdin, seq[:1]); n != 1 {
+			return c
+		}
+		if n, _ := unix.Read(unix.Stdin, seq[1:2]); n != 1 {
+			return c
+		}
+		if seq[0] == '[' {
+			switch seq[1] {
+			case 'A':
+				return ArrowUp
+			case 'B':
+				return ArrowDown
+			case 'C':
+				return ArrowRight
+			case 'D':
+				return ArrowLeft
+			}
+		}
+	}
+	return c
 }
 
 func editorProcessKeypress() {
@@ -114,13 +146,20 @@ func editorProcessKeypress() {
 		editorRefreshScreen()
 		restoreMode()
 		unix.Exit(0)
-	case 'w':
+	case ArrowUp, ArrowDown, ArrowLeft, ArrowRight:
+		editorMoveCustor(c)
+	}
+}
+
+func editorMoveCustor(c byte) {
+	switch c {
+	case ArrowUp:
 		E.cy--
-	case 's':
+	case ArrowDown:
 		E.cy++
-	case 'a':
+	case ArrowLeft:
 		E.cx--
-	case 'd':
+	case ArrowRight:
 		E.cx++
 	}
 }

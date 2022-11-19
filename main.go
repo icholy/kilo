@@ -101,6 +101,8 @@ const (
 	ArrowDown
 	PageUp
 	PageDown
+	HomeKey
+	EndKey
 )
 
 func editorReadKey() int {
@@ -129,18 +131,21 @@ func editorReadKey() int {
 			return c
 		}
 		// page up/page down
-		if seq[1] >= '0' || seq[1] <= '9' {
+		if seq[1] >= '0' && seq[1] <= '9' {
 			if n, _ := unix.Read(unix.Stdin, seq[2:]); n != 1 {
 				return c
 			}
-			if seq[2] != '~' {
-				return c
-			}
-			switch seq[1] {
-			case '5':
-				return PageUp
-			case '6':
-				return PageDown
+			if seq[2] == '~' {
+				switch seq[1] {
+				case '5':
+					return PageUp
+				case '6':
+					return PageDown
+				case '1', '7':
+					return HomeKey
+				case '4', '8':
+					return EndKey
+				}
 			}
 		}
 		// arrow keys
@@ -153,6 +158,10 @@ func editorReadKey() int {
 			return ArrowRight
 		case 'D':
 			return ArrowLeft
+		case 'H':
+			return HomeKey
+		case 'F':
+			return EndKey
 		}
 	}
 	return c
@@ -167,14 +176,18 @@ func editorProcessKeypress() {
 		unix.Exit(0)
 	case ArrowUp, ArrowDown, ArrowLeft, ArrowRight:
 		editorMoveCustor(c)
-	case PageUp, PageDown:
-		arrow := ArrowUp
-		if c == PageDown {
-			arrow = ArrowDown
-		}
+	case PageUp:
 		for i := 0; i < E.screenrows; i++ {
-			editorMoveCustor(arrow)
+			editorMoveCustor(ArrowUp)
 		}
+	case PageDown:
+		for i := 0; i < E.screenrows; i++ {
+			editorMoveCustor(ArrowDown)
+		}
+	case HomeKey:
+		E.cx = 0
+	case EndKey:
+		E.cx = E.screencols
 	}
 }
 

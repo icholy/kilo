@@ -91,6 +91,7 @@ func die(format string, args ...any) {
 
 func initEditor() {
 	E.screenrows, E.screencols = getWindowSize()
+	E.screenrows--
 }
 
 func editorOpen(filename string) {
@@ -236,6 +237,19 @@ func editorReadKey() int {
 	return c
 }
 
+func editorDrawStatusBar(b *bytes.Buffer) {
+	b.WriteString("\x1b[7m")
+	var line strings.Builder
+
+	fmt.Fprintf(&line, "cx=%d, rx=%d, colloff=%d", E.cx, E.rx, E.coloff)
+
+	b.WriteString(line.String())
+	for i := line.Len(); i < E.screencols; i++ {
+		b.WriteString(" ")
+	}
+	b.WriteString("\x1b[m")
+}
+
 func editorProcessKeypress() {
 	c := editorReadKey()
 	switch c {
@@ -325,6 +339,7 @@ func editorRefreshScreen() {
 	b.WriteString("\x1b[?25l") // hide cursor
 	b.WriteString("\x1b[H")    // put cursor at top left
 	editorDrawRows(&b)
+	editorDrawStatusBar(&b)
 	fmt.Fprintf(&b, "\x1b[%d;%dH", E.cy-E.rowoff+1, E.rx-E.coloff+1) // move cursor to correct position
 	b.WriteString("\x1b[?25h")                                       // show cursor
 	unix.Write(unix.Stdout, b.Bytes())
@@ -359,9 +374,7 @@ func editorDrawRows(b *bytes.Buffer) {
 			b.Write(line)
 		}
 		b.WriteString("\x1b[K") // clear one line
-		if y < E.screenrows-1 {
-			b.WriteString("\r\n")
-		}
+		b.WriteString("\r\n")
 	}
 }
 

@@ -24,9 +24,9 @@ func (r *Row) Update() {
 	render := make([]byte, 0, len(r.chars))
 	for _, b := range r.chars {
 		if b == '\t' {
-			render = append(render, ' ')
+			render = append(render, '|')
 			for len(render)%tabstop != 0 {
-				render = append(render, ' ')
+				render = append(render, '>')
 			}
 		} else {
 			render = append(render, b)
@@ -57,6 +57,7 @@ var E struct {
 	rowoff     int
 	coloff     int
 	rows       []Row
+	status     string
 }
 
 func enableRawMode() {
@@ -240,9 +241,7 @@ func editorReadKey() int {
 func editorDrawStatusBar(b *bytes.Buffer) {
 	b.WriteString("\x1b[7m")
 	var line strings.Builder
-
-	fmt.Fprintf(&line, "cx=%d, rx=%d, colloff=%d", E.cx, E.rx, E.coloff)
-
+	line.WriteString(E.status)
 	b.WriteString(line.String())
 	for i := line.Len(); i < E.screencols; i++ {
 		b.WriteString(" ")
@@ -315,6 +314,7 @@ func editorMoveCursor(c int) {
 }
 
 func editorScroll() {
+	E.status = fmt.Sprintf("before: cx=%d, rx=%d, cy=%d", E.cx, E.rx, E.cy)
 	E.rx = 0
 	if E.cy < E.numrows {
 		E.rx = E.rows[E.cy].CxToRx(E.cx)
@@ -331,6 +331,7 @@ func editorScroll() {
 	if E.rx >= E.coloff+E.screencols {
 		E.coloff = E.rx - E.screencols + 1
 	}
+	E.status += fmt.Sprintf(" after: cx=%d, rx=%d, cy=%d", E.cx, E.rx, E.cy)
 }
 
 func editorRefreshScreen() {

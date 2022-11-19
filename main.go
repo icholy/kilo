@@ -381,6 +381,7 @@ func editorFind() {
 			E.cy = m.cy
 			E.cx = m.cx
 			E.rowoff = E.numrows
+			E.debug = fmt.Sprintf("find: %d/%d", matchidx+1, len(matches))
 		}
 	})
 	if !ok {

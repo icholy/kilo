@@ -26,6 +26,7 @@ var E struct {
 	cy         int
 	numrows    int
 	rowoff     int
+	coloff     int
 	rows       []Row
 }
 
@@ -233,6 +234,10 @@ func editorProcessKeypress() {
 }
 
 func editorMoveCursor(c int) {
+	var row Row
+	if E.cy < E.numrows {
+		row = E.rows[E.cy]
+	}
 	switch c {
 	case ArrowUp:
 		if E.cy > 0 {
@@ -247,7 +252,7 @@ func editorMoveCursor(c int) {
 			E.cx--
 		}
 	case ArrowRight:
-		if E.cx < E.screencols {
+		if (row.chars != nil && E.cx < len(row.chars)) {
 			E.cx++
 		}
 	}
@@ -260,6 +265,12 @@ func editorScroll() {
 	if E.cy >= E.rowoff+E.screenrows {
 		E.rowoff = E.cy - E.screenrows + 1
 	}
+	if E.cx < E.coloff {
+		E.coloff = E.cx
+	}
+	if E.cx >= E.coloff+E.screencols {
+		E.coloff = E.cx - E.screencols + 1
+	}
 }
 
 func editorRefreshScreen() {
@@ -268,8 +279,8 @@ func editorRefreshScreen() {
 	b.WriteString("\x1b[?25l") // hide cursor
 	b.WriteString("\x1b[H")    // put cursor at top left
 	editorDrawRows(&b)
-	fmt.Fprintf(&b, "\x1b[%d;%dH", E.cy-E.rowoff+1, E.cx+1) // move cursor to correct position
-	b.WriteString("\x1b[?25h")                              // show cursor
+	fmt.Fprintf(&b, "\x1b[%d;%dH", E.cy-E.rowoff+1, E.cx-E.coloff+1) // move cursor to correct position
+	b.WriteString("\x1b[?25h")                                       // show cursor
 	unix.Write(unix.Stdout, b.Bytes())
 }
 
@@ -291,6 +302,11 @@ func editorDrawRows(b *bytes.Buffer) {
 			}
 		} else {
 			line := E.rows[filerow].chars
+			coloff := E.coloff
+			if coloff >= len(line) {
+				coloff = 0
+			}
+			line = line[coloff:]
 			if len(line) > E.screencols {
 				line = line[:E.screencols]
 			}

@@ -612,7 +612,7 @@ func main() {
 		editorOpen(flag.Arg(0))
 	}
 	// show help message
-	editorSetStatus("HELP: Ctrl-S = save | Ctrl-Q = quit")
+	editorSetStatus("HELP: Ctrl-S = save | Ctrl-Q = quit | Ctrl-F = find")
 	// byte reader loop
 	for {
 		editorRefreshScreen()

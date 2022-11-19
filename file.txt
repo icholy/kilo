@@ -1,3 +1,108 @@
 Hello, world!
 Line 2
 This is a third line
+Another line
+
+More lines
+
+
+
+
+
+
+
+
+
+Lines with blanks
+
+@compassdigital/provider.user.cdl@0.29.1 /home/icholy/src/github.com/compassdigital/cdl/api/platform2/compassdigital.provider.user.cdl
+├── @compassdigital/auth@5.0.9
+├── @compassdigital/constant@0.4.2
+├── @compassdigital/error@0.1.0
+├── @compassdigital/id@3.6.0
+├── @compassdigital/middleware@4.1.0
+├── @compassdigital/provider.data@5.2.0
+├── @compassdigital/review@4.6.3
+├── @compassdigital/salesforce.sdk@1.0.2
+├── @compassdigital/serverless-plugin-cdl@2.3.1
+├── @compassdigital/service.user@3.3.15
+├── @compassdigital/test@0.15.1
+├── @compassdigital/util@1.0.1
+├── accesscontrol@2.2.1
+├── assert@2.0.0
+├── aws-sdk@2.1258.0
+├── aws-xray-sdk@2.5.0
+├── base64url@3.0.1
+├── basic-auth@2.0.1
+├── basic-authorization-header@0.2.7
+├── dynamoose@1.11.1
+├── es6-promise-pool@2.5.0
+├── eslint@5.16.0
+├── firebase-admin@9.12.0
+├── generate-password@1.7.0
+├── js-sha512@0.8.0
+├── jsonpath@1.1.1
+├── jsonwebtoken@8.5.1
+├── libphonenumber-js@1.10.13
+├── lint-staged@8.2.1
+├── lodash@4.17.21
+├── mergejson@1.1.2
+├── mocha@10.0.0
+├── password-validator@5.3.0
+├── postmark@2.9.5
+├── prompts@2.4.2
+├── serverless-dynamodb-autoscaling@0.6.2
+├── serverless-offline@11.3.0
+├── serverless@3.23.0
+├── should@13.2.3
+├── sinon@11.1.2
+├── superagent@5.3.1
+├── utf8-bytes@0.0.1
+├── uuid@7.0.3
+└── yargs@16.2.0
+
+@compassdigital/provider.user.cdl@0.29.1 /home/icholy/src/github.com/compassdigital/cdl/api/platform2/compassdigital.provider.user.cdl
+├── @compassdigital/auth@5.0.9
+├── @compassdigital/constant@0.4.2
+├── @compassdigital/error@0.1.0
+├── @compassdigital/id@3.6.0
+├── @compassdigital/middleware@4.1.0
+├── @compassdigital/provider.data@5.2.0
+├── @compassdigital/review@4.6.3
+├── @compassdigital/salesforce.sdk@1.0.2
+├── @compassdigital/serverless-plugin-cdl@2.3.1
+├── @compassdigital/service.user@3.3.15
+├── @compassdigital/test@0.15.1
+├── @compassdigital/util@1.0.1
+├── accesscontrol@2.2.1
+├── assert@2.0.0
+├── aws-sdk@2.1258.0
+├── aws-xray-sdk@2.5.0
+├── base64url@3.0.1
+├── basic-auth@2.0.1
+├── basic-authorization-header@0.2.7
+├── dynamoose@1.11.1
+├── es6-promise-pool@2.5.0
+├── eslint@5.16.0
+├── firebase-admin@9.12.0
+├── generate-password@1.7.0
+├── js-sha512@0.8.0
+├── jsonpath@1.1.1
+├── jsonwebtoken@8.5.1
+├── libphonenumber-js@1.10.13
+├── lint-staged@8.2.1
+├── lodash@4.17.21
+├── mergejson@1.1.2
+├── mocha@10.0.0
+├── password-validator@5.3.0
+├── postmark@2.9.5
+├── prompts@2.4.2
+├── serverless-dynamodb-autoscaling@0.6.2
+├── serverless-offline@11.3.0
+├── serverless@3.23.0
+├── should@13.2.3
+├── sinon@11.1.2
+├── superagent@5.3.1
+├── utf8-bytes@0.0.1
+├── uuid@7.0.3
+└── yargs@16.2.0

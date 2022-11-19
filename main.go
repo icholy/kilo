@@ -266,6 +266,7 @@ func editorDrawStatusBar(b *bytes.Buffer) {
 	b.WriteString("\x1b[m")
 	b.WriteString("\r\n")
 	// status message
+	b.WriteString("\x1b[K")
 	if E.status != "" {
 		if time.Since(E.statustime) > 5*time.Second {
 			E.status = ""

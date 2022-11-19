@@ -25,6 +25,7 @@ var E struct {
 	cx         int
 	cy         int
 	numrows    int
+	rowoff     int
 	rows       []Row
 }
 
@@ -238,7 +239,7 @@ func editorMoveCursor(c int) {
 			E.cy--
 		}
 	case ArrowDown:
-		if E.cy < E.screenrows {
+		if E.cy < E.numrows {
 			E.cy++
 		}
 	case ArrowLeft:
@@ -252,19 +253,30 @@ func editorMoveCursor(c int) {
 	}
 }
 
+func editorScroll() {
+	if E.cy < E.rowoff {
+		E.rowoff = E.cy
+	}
+	if E.cy >= E.rowoff+E.screenrows {
+		E.rowoff = E.cy - E.screenrows + 1
+	}
+}
+
 func editorRefreshScreen() {
+	editorScroll()
 	var b bytes.Buffer
 	b.WriteString("\x1b[?25l") // hide cursor
 	b.WriteString("\x1b[H")    // put cursor at top left
 	editorDrawRows(&b)
-	fmt.Fprintf(&b, "\x1b[%d;%dH", E.cy+1, E.cx+1) // move cursor to correct position
-	b.WriteString("\x1b[?25h")                     // show cursor
+	fmt.Fprintf(&b, "\x1b[%d;%dH", E.cy-E.rowoff+1, E.cx+1) // move cursor to correct position
+	b.WriteString("\x1b[?25h")                              // show cursor
 	unix.Write(unix.Stdout, b.Bytes())
 }
 
 func editorDrawRows(b *bytes.Buffer) {
 	for y := 0; y < E.screenrows; y++ {
-		if y >= E.numrows {
+		filerow := y + E.rowoff
+		if filerow >= E.numrows {
 			// print welcome screen
 			if E.numrows == 0 && y == E.screenrows/3 {
 				welcome := fmt.Sprintf("Kilo editor -- version %s", version)
@@ -278,7 +290,7 @@ func editorDrawRows(b *bytes.Buffer) {
 				b.WriteString("~")
 			}
 		} else {
-			line := E.rows[y].chars
+			line := E.rows[filerow].chars
 			if len(line) > E.screencols {
 				line = line[:E.screencols]
 			}

@@ -19,9 +19,26 @@ import (
 const version = "0.0.1"
 const tabstop = 8
 
+type Highlight int
+
+const (
+	HighlightNormal Highlight = iota
+	HighlightNumber
+)
+
+func editorSyntaxToColor(hl Highlight) int {
+	switch hl {
+	case HighlightNumber:
+		return 31
+	default:
+		return 37
+	}
+}
+
 type Row struct {
 	chars  []byte
 	render []byte
+	hl     []Highlight
 }
 
 func (r *Row) Len() int {
@@ -57,18 +74,29 @@ func (r *Row) Append(chars []byte) {
 }
 
 func (r *Row) Update() {
-	render := make([]byte, 0, r.Len())
+	if r.render == nil {
+		r.render = make([]byte, 0, r.Len())
+	} else {
+		r.render = r.render[:0]
+	}
 	for _, b := range r.chars {
 		if b == '\t' {
-			render = append(render, ' ')
-			for len(render)%tabstop != 0 {
-				render = append(render, ' ')
+			r.render = append(r.render, ' ')
+			for len(r.render)%tabstop != 0 {
+				r.render = append(r.render, ' ')
 			}
 		} else {
-			render = append(render, b)
+			r.render = append(r.render, b)
 		}
 	}
-	r.render = render
+	r.hl = make([]Highlight, len(r.render))
+	for i, c := range r.render {
+		if '0' <= c && c <= '9' {
+			r.hl[i] = HighlightNumber
+		} else {
+			r.hl[i] = HighlightNormal
+		}
+	}
 }
 
 func (r Row) CxToRx(cx int) int {
@@ -639,7 +667,8 @@ func editorDrawRows(b *bytes.Buffer) {
 				b.WriteString("~")
 			}
 		} else {
-			line := E.rows[filerow].render
+			row := E.rows[filerow]
+			line := row.render
 			coloff := E.coloff
 			if coloff >= len(line) {
 				coloff = 0
@@ -648,15 +677,21 @@ func editorDrawRows(b *bytes.Buffer) {
 			if len(line) > E.screencols {
 				line = line[:E.screencols]
 			}
-			for _, c := range line {
-				if '0' <= c && c <= '9' {
-					b.WriteString("\x1b[31m")
-					b.WriteByte(c)
+			var prevcolor int
+			for i, c := range line {
+				hl := row.hl[i+coloff]
+				if hl == HighlightNormal {
 					b.WriteString("\x1b[39m")
+					prevcolor = -1
 				} else {
-					b.WriteByte(c)
+					if color := editorSyntaxToColor(hl); color != prevcolor {
+						fmt.Fprintf(b, "\x1b[%dm", color)
+						prevcolor = color
+					}
 				}
+				b.WriteByte(c)
 			}
+			b.WriteString("\x1b[39m")
 		}
 		b.WriteString("\x1b[K") // clear one line
 		b.WriteString("\r\n")

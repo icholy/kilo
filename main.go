@@ -248,7 +248,7 @@ func editorDrawStatusBar(b *bytes.Buffer) {
 	if filename == "" {
 		filename = "[No Name]"
 	}
-	fmt.Fprintf(&line, "%.20s - %d lines", filename, E.numrows)
+	fmt.Fprintf(&line, "%.20s - line %d/%d", filename, E.cy+1, E.numrows)
 	if E.status != "" {
 		line.WriteString(" " + E.status)
 	}

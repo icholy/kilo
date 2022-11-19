@@ -103,6 +103,7 @@ const (
 	PageDown
 	HomeKey
 	EndKey
+	DeleteKey
 )
 
 func editorReadKey() int {
@@ -127,41 +128,51 @@ func editorReadKey() int {
 		if n, _ := unix.Read(unix.Stdin, seq[1:2]); n != 1 {
 			return c
 		}
-		if seq[0] != '[' {
-			return c
-		}
-		// page up/page down
-		if seq[1] >= '0' && seq[1] <= '9' {
-			if n, _ := unix.Read(unix.Stdin, seq[2:]); n != 1 {
-				return c
+		if seq[0] == '[' {
+			// page up/page down
+			if seq[1] >= '0' && seq[1] <= '9' {
+				if n, _ := unix.Read(unix.Stdin, seq[2:]); n != 1 {
+					return c
+				}
+				if seq[2] == '~' {
+					switch seq[1] {
+					case '3':
+						return DeleteKey
+					case '5':
+						return PageUp
+					case '6':
+						return PageDown
+					case '1', '7':
+						return HomeKey
+					case '4', '8':
+						return EndKey
+					}
+				}
 			}
-			if seq[2] == '~' {
+			// arrow keys
+			switch seq[1] {
+			case 'A':
+				return ArrowUp
+			case 'B':
+				return ArrowDown
+			case 'C':
+				return ArrowRight
+			case 'D':
+				return ArrowLeft
+			case 'H':
+				return HomeKey
+			case 'F':
+				return EndKey
+			}
+		} else {
+			if seq[0] == 'O' {
 				switch seq[1] {
-				case '5':
-					return PageUp
-				case '6':
-					return PageDown
-				case '1', '7':
+				case 'H':
 					return HomeKey
-				case '4', '8':
+				case 'F':
 					return EndKey
 				}
 			}
-		}
-		// arrow keys
-		switch seq[1] {
-		case 'A':
-			return ArrowUp
-		case 'B':
-			return ArrowDown
-		case 'C':
-			return ArrowRight
-		case 'D':
-			return ArrowLeft
-		case 'H':
-			return HomeKey
-		case 'F':
-			return EndKey
 		}
 	}
 	return c
@@ -175,23 +186,25 @@ func editorProcessKeypress() {
 		restoreMode()
 		unix.Exit(0)
 	case ArrowUp, ArrowDown, ArrowLeft, ArrowRight:
-		editorMoveCustor(c)
+		editorMoveCursor(c)
 	case PageUp:
 		for i := 0; i < E.screenrows; i++ {
-			editorMoveCustor(ArrowUp)
+			editorMoveCursor(ArrowUp)
 		}
 	case PageDown:
 		for i := 0; i < E.screenrows; i++ {
-			editorMoveCustor(ArrowDown)
+			editorMoveCursor(ArrowDown)
 		}
 	case HomeKey:
 		E.cx = 0
 	case EndKey:
 		E.cx = E.screencols
+	case DeleteKey:
+		editorMoveCursor(ArrowLeft)
 	}
 }
 
-func editorMoveCustor(c int) {
+func editorMoveCursor(c int) {
 	switch c {
 	case ArrowUp:
 		if E.cy > 0 {

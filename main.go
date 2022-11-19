@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"strings"
@@ -124,6 +125,25 @@ func editorOpen(filename string) {
 	if err := sc.Err(); err != nil {
 		die("failed to read file: %s", err)
 	}
+}
+
+func editorSave() {
+	if E.filename == "" {
+		editorSetStatus("no filename")
+		return
+	}
+	f, err := os.OpenFile(E.filename, os.O_RDWR|os.O_CREATE, 0644)
+	if err != nil {
+		die("save failed: %v", err)
+	}
+	defer f.Close()
+	if err := writeRowsTo(f); err != nil {
+		die("save failed: %v", err)
+	}
+	if err := f.Close(); err != nil {
+		die("save failed: %v", err)
+	}
+	editorSetStatus("saved %s", E.filename)
 }
 
 func getWindowSize() (rows, cols int) {
@@ -313,6 +333,8 @@ func editorProcessKeypress() {
 		editorRefreshScreen()
 		restoreMode()
 		unix.Exit(0)
+	case controlKey('s'):
+		editorSave()
 	case ArrowUp, ArrowDown, ArrowLeft, ArrowRight:
 		editorMoveCursor(c)
 	case PageUp:
@@ -381,6 +403,18 @@ func editorMoveCursor(c int) {
 			E.cx = len(row.chars)
 		}
 	}
+}
+
+func writeRowsTo(w io.Writer) error {
+	for _, r := range E.rows {
+		if _, err := w.Write(r.chars); err != nil {
+			return err
+		}
+		if _, err := w.Write([]byte("\n")); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func editorScroll() {

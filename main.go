@@ -15,7 +15,6 @@ import (
 const version = "0.0.1"
 
 type Row struct {
-	size  int
 	chars []byte
 }
 
@@ -26,7 +25,7 @@ var E struct {
 	cx         int
 	cy         int
 	numrows    int
-	row        Row
+	rows       []Row
 }
 
 func enableRawMode() {
@@ -71,10 +70,10 @@ func editorOpen(filename string) {
 	defer f.Close()
 	sc := bufio.NewScanner(f)
 	for sc.Scan() {
-		E.row.chars = sc.Bytes()
-		E.row.size = len(E.row.chars)
-		E.numrows = 1
-		break
+		E.rows = append(E.rows, Row{
+			chars: sc.Bytes(),
+		})
+		E.numrows++
 	}
 	if err := sc.Err(); err != nil {
 		die("failed to read file: %s", err)
@@ -279,7 +278,7 @@ func editorDrawRows(b *bytes.Buffer) {
 				b.WriteString("~")
 			}
 		} else {
-			line := E.row.chars
+			line := E.rows[y].chars
 			if len(line) > E.screencols {
 				line = line[:E.screencols]
 			}

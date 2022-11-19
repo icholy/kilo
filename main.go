@@ -23,16 +23,20 @@ type Row struct {
 	render []byte
 }
 
+func (r *Row) Len() int {
+	return len(r.chars)
+}
+
 func (r *Row) InsertChar(at, c int) {
-	if at < 0 || at > len(r.chars) {
-		at = len(r.chars)
+	if at < 0 || at > r.Len() {
+		at = r.Len()
 	}
 	r.chars = slices.Insert(r.chars, at, byte(c))
 	r.Update()
 }
 
 func (r *Row) DeleteChar(at int) {
-	if at < 0 || at > len(r.chars) {
+	if at < 0 || at > r.Len() {
 		return
 	}
 	r.chars = slices.Delete(r.chars, at, at+1)
@@ -45,7 +49,7 @@ func (r *Row) Append(chars []byte) {
 }
 
 func (r *Row) Update() {
-	render := make([]byte, 0, len(r.chars))
+	render := make([]byte, 0, r.Len())
 	for _, b := range r.chars {
 		if b == '\t' {
 			render = append(render, ' ')
@@ -344,6 +348,9 @@ func editorDeleteRow(at int) {
 	if at < 0 || at >= E.numrows {
 		return
 	}
+	if E.cx == 0 && E.cy == 0 {
+		return
+	}
 	E.rows = slices.Delete(E.rows, at, at+1)
 	E.numrows--
 	E.dirty = true
@@ -362,9 +369,18 @@ func editorDeleteChar() {
 	if E.cy == E.numrows {
 		return
 	}
+	if E.cx == 0 && E.cy == 0 {
+		return
+	}
+	row := &E.rows[E.cy]
 	if E.cx > 0 {
-		E.rows[E.cy].DeleteChar(E.cx - 1)
+		row.DeleteChar(E.cx - 1)
 		E.cx--
+	} else {
+		E.cx = E.rows[E.cy-1].Len()
+		E.rows[E.cy-1].Append(row.chars)
+		editorDeleteRow(E.cy)
+		E.cy--
 	}
 }
 
@@ -396,7 +412,7 @@ func editorProcessKeypress() {
 		E.cx = 0
 	case EndKey:
 		if E.cy < E.numrows {
-			E.cx = len(E.rows[E.cy].chars)
+			E.cx = E.rows[E.cy].Len()
 		}
 	case '\r':
 		// TODO
@@ -431,12 +447,12 @@ func editorMoveCursor(c int) {
 			E.cx--
 		} else if E.cy > 0 {
 			E.cy--
-			E.cx = len(E.rows[E.cy].chars)
+			E.cx = E.rows[E.cy].Len()
 		}
 	case ArrowRight:
-		if row.chars != nil && E.cx < len(row.chars) {
+		if row.chars != nil && E.cx < row.Len() {
 			E.cx++
-		} else if row.chars != nil && E.cx == len(row.chars) {
+		} else if row.chars != nil && E.cx == row.Len() {
 			E.cy++
 			E.cx = 0
 		}
@@ -444,8 +460,8 @@ func editorMoveCursor(c int) {
 
 	if E.cy < E.numrows {
 		row := E.rows[E.cy]
-		if E.cx > len(row.chars) {
-			E.cx = len(row.chars)
+		if E.cx > row.Len() {
+			E.cx = row.Len()
 		}
 	}
 }

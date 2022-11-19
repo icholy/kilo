@@ -302,7 +302,7 @@ func editorReadKey() int {
 	return c
 }
 
-func editorPrompt(prompt string, callback func(input string)) (string, bool) {
+func editorPrompt(prompt string, callback func(input string, key int)) (string, bool) {
 	var input []byte
 	for {
 		editorSetStatus("%s %s (ESC to cancel)", prompt, input)
@@ -319,7 +319,7 @@ func editorPrompt(prompt string, callback func(input string)) (string, bool) {
 			if len(input) != 0 {
 				editorSetStatus("")
 				if callback != nil {
-					callback(string(input))
+					callback(string(input), c)
 				}
 				return string(input), true
 			}
@@ -327,25 +327,26 @@ func editorPrompt(prompt string, callback func(input string)) (string, bool) {
 			input = append(input, byte(c))
 		}
 		if callback != nil {
-			callback(string(input))
+			callback(string(input), c)
 		}
 	}
 }
 
 func editorFind() {
-	input, ok := editorPrompt("Search:", nil)
-	if !ok {
-		return
-	}
-	query := []byte(input)
-	for i, r := range E.rows {
-		if j := bytes.Index(r.chars, query); j >= 0 {
-			E.cy = i
-			E.cx = j
-			E.rowoff = E.numrows
-			break
+	editorPrompt("Search:", func(input string, c int) {
+		if c == '\r' || c == '\x1b' {
+			return
 		}
-	}
+		query := []byte(input)
+		for i, r := range E.rows {
+			if j := bytes.Index(r.chars, query); j >= 0 {
+				E.cy = i
+				E.cx = j
+				E.rowoff = E.numrows
+				break
+			}
+		}
+	})
 }
 
 func editorSetStatus(format string, args ...any) {

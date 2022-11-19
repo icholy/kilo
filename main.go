@@ -265,17 +265,24 @@ func editorProcessKeypress() {
 	case ArrowUp, ArrowDown, ArrowLeft, ArrowRight:
 		editorMoveCursor(c)
 	case PageUp:
+		E.cy = E.rowoff
 		for i := 0; i < E.screenrows; i++ {
 			editorMoveCursor(ArrowUp)
 		}
 	case PageDown:
+		E.cy = E.rowoff + E.screenrows - 1
+		if E.cy > E.numrows {
+			E.cy = E.numrows
+		}
 		for i := 0; i < E.screenrows; i++ {
 			editorMoveCursor(ArrowDown)
 		}
 	case HomeKey:
 		E.cx = 0
 	case EndKey:
-		E.cx = E.screencols
+		if E.cy < E.numrows {
+			E.cx = len(E.rows[E.cy].chars)
+		}
 	case DeleteKey:
 		editorMoveCursor(ArrowLeft)
 	}

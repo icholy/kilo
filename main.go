@@ -313,7 +313,7 @@ func editorPrompt(prompt string, callback func(input string, key int)) (string, 
 			if len(input) > 0 {
 				input = input[:len(input)-1]
 			}
-		} else if c == '\x1b' {
+		} else if c == '\x1b' || c == controlKey('q') {
 			editorSetStatus("")
 			return "", false
 		} else if c == '\r' {

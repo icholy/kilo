@@ -252,6 +252,10 @@ func editorDrawStatusBar(b *bytes.Buffer) {
 	if E.status != "" {
 		line.WriteString(" " + E.status)
 	}
+	status := line.String()
+	if len(status) > E.screencols {
+		status = status[:E.screencols]
+	}
 	b.WriteString(line.String())
 	for i := line.Len(); i < E.screencols; i++ {
 		b.WriteString(" ")

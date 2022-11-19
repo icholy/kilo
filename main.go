@@ -93,6 +93,7 @@ var E struct {
 	rowoff     int
 	coloff     int
 	rows       []Row
+	debug      string
 	status     string
 	statustime time.Time
 	filename   string
@@ -332,21 +333,54 @@ func editorPrompt(prompt string, callback func(input string, key int)) (string, 
 	}
 }
 
+type SearchMatch struct {
+	cx, cy int
+}
+
 func editorFind() {
+	// save the cursor state in case we cancel
 	cx, cy := E.cx, E.cy
 	rowoff, coloff := E.rowoff, E.coloff
+
+	// the search matches
+	var matchidx int
+	var matches []SearchMatch
+
 	_, ok := editorPrompt("Search:", func(input string, c int) {
-		if c == '\r' || c == '\x1b' {
+		switch c {
+		case '\r', '\x1b':
 			return
-		}
-		query := []byte(input)
-		for i, r := range E.rows {
-			if j := bytes.Index(r.chars, query); j >= 0 {
-				E.cy = i
-				E.cx = j
-				E.rowoff = E.numrows
-				break
+		case ArrowUp, ArrowLeft:
+			matchidx--
+		case ArrowDown, ArrowRight:
+			matchidx++
+		default:
+			matches = matches[:0]
+			query := []byte(input)
+			for y, r := range E.rows {
+				var off int
+				for off < len(r.chars) {
+					i := bytes.Index(r.chars[off:], query)
+					if i < 0 {
+						break
+					}
+					matches = append(matches, SearchMatch{cx: off + i, cy: y})
+					off += i + 1
+				}
 			}
+		}
+
+		if len(matches) > 0 {
+			// fix the match index
+			if matchidx < 0 {
+				matchidx += len(matches)
+			} else {
+				matchidx = matchidx % len(matches)
+			}
+			m := matches[matchidx]
+			E.cy = m.cy
+			E.cx = m.cx
+			E.rowoff = E.numrows
 		}
 	})
 	if !ok {
@@ -372,6 +406,9 @@ func editorDrawStatusBar(b *bytes.Buffer) {
 	status := fmt.Sprintf("%.20s - line %d/%d", filename, E.cy+1, E.numrows)
 	if E.dirty {
 		status += " (modified)"
+	}
+	if E.debug != "" {
+		status += " " + E.debug
 	}
 	if len(status) > E.screencols {
 		status = status[:E.screencols]

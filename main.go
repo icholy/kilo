@@ -267,7 +267,7 @@ func editorDrawRows(b *bytes.Buffer) {
 	for y := 0; y < E.screenrows; y++ {
 		if y >= E.numrows {
 			// print welcome screen
-			if y == E.screenrows/3 {
+			if E.numrows == 0 && y == E.screenrows/3 {
 				welcome := fmt.Sprintf("Kilo editor -- version %s", version)
 				if len(welcome) > E.screencols {
 					welcome = welcome[:E.screencols]

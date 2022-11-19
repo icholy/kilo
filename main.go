@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"time"
 
 	"golang.org/x/exp/slices"
 	"golang.org/x/sys/unix"
@@ -59,6 +60,7 @@ var E struct {
 	coloff     int
 	rows       []Row
 	status     string
+	statustime time.Time
 	filename   string
 }
 
@@ -94,7 +96,7 @@ func die(format string, args ...any) {
 
 func initEditor() {
 	E.screenrows, E.screencols = getWindowSize()
-	E.screenrows--
+	E.screenrows -= 2 // room for status bar & message
 }
 
 func editorOpen(filename string) {
@@ -241,26 +243,41 @@ func editorReadKey() int {
 	return c
 }
 
+func editorSetStatus(format string, args ...any) {
+	E.status = fmt.Sprintf(format, args...)
+	E.statustime = time.Now()
+}
+
 func editorDrawStatusBar(b *bytes.Buffer) {
+	// status bar
 	b.WriteString("\x1b[7m")
-	var line strings.Builder
 	filename := E.filename
 	if filename == "" {
 		filename = "[No Name]"
 	}
-	fmt.Fprintf(&line, "%.20s - line %d/%d", filename, E.cy+1, E.numrows)
-	if E.status != "" {
-		line.WriteString(" " + E.status)
-	}
-	status := line.String()
+	status := fmt.Sprintf("%.20s - line %d/%d", filename, E.cy+1, E.numrows)
 	if len(status) > E.screencols {
 		status = status[:E.screencols]
 	}
-	b.WriteString(line.String())
-	for i := line.Len(); i < E.screencols; i++ {
+	b.WriteString(status)
+	for i := len(status); i < E.screencols; i++ {
 		b.WriteString(" ")
 	}
 	b.WriteString("\x1b[m")
+	b.WriteString("\r\n")
+	// status message
+	if E.status != "" {
+		if time.Since(E.statustime) > 5*time.Second {
+			E.status = ""
+			return
+		}
+		message := E.status
+		if len(status) > E.screencols {
+			message = message[:E.screencols]
+		}
+		b.WriteString(message)
+	}
+
 }
 
 func editorProcessKeypress() {
@@ -408,6 +425,8 @@ func main() {
 	if flag.NArg() > 0 {
 		editorOpen(flag.Arg(0))
 	}
+	// show help message
+	editorSetStatus("HELP: Ctrl-Q = quit")
 	// byte reader loop
 	for {
 		editorRefreshScreen()

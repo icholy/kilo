@@ -103,7 +103,7 @@ func isDelim(c byte) bool {
 
 func isKeyword(token []byte) bool {
 	switch string(token) {
-	case "if", "switch", "case", "func", "then", "for", "var", "type", "interface", "const",
+	case "if", "else", "switch", "case", "func", "then", "for", "var", "type", "interface", "const",
 		"return", "struct", "default", "iota", "nil", "package", "import", "map", "break", "continue":
 		return true
 	default:

@@ -152,7 +152,7 @@ func editorOpen(filename string) {
 
 func editorSave() {
 	if E.filename == "" {
-		name, ok := editorPrompt("Save as:")
+		name, ok := editorPrompt("Save as:", nil)
 		if !ok {
 			return
 		}
@@ -302,7 +302,7 @@ func editorReadKey() int {
 	return c
 }
 
-func editorPrompt(prompt string) (string, bool) {
+func editorPrompt(prompt string, callback func(input string)) (string, bool) {
 	var input []byte
 	for {
 		editorSetStatus("%s %s (ESC to cancel)", prompt, input)
@@ -318,16 +318,22 @@ func editorPrompt(prompt string) (string, bool) {
 		} else if c == '\r' {
 			if len(input) != 0 {
 				editorSetStatus("")
+				if callback != nil {
+					callback(string(input))
+				}
 				return string(input), true
 			}
 		} else if unicode.IsPrint(rune(c)) && c < 128 {
 			input = append(input, byte(c))
 		}
+		if callback != nil {
+			callback(string(input))
+		}
 	}
 }
 
 func editorFind() {
-	input, ok := editorPrompt("Search:")
+	input, ok := editorPrompt("Search:", nil)
 	if !ok {
 		return
 	}

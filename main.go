@@ -13,6 +13,7 @@ import (
 )
 
 const version = "0.0.1"
+const tabstop = 8
 
 type Row struct {
 	chars  []byte
@@ -24,7 +25,7 @@ func (r *Row) Update() {
 	for _, b := range r.chars {
 		if b == '\t' {
 			render = append(render, ' ')
-			for len(render)%8 != 0 {
+			for len(render)%tabstop != 0 {
 				render = append(render, ' ')
 			}
 		} else {
@@ -34,12 +35,24 @@ func (r *Row) Update() {
 	r.render = render
 }
 
+func (r Row) CxToRx(cx int) int {
+	var rx int
+	for _, c := range r.chars[:cx] {
+		if c == '\t' {
+			rx += (tabstop - 1) - rx%tabstop
+		}
+		rx++
+	}
+	return rx
+}
+
 var E struct {
 	termios    unix.Termios
 	screenrows int
 	screencols int
 	cx         int
 	cy         int
+	rx         int
 	numrows    int
 	rowoff     int
 	coloff     int
@@ -288,17 +301,21 @@ func editorMoveCursor(c int) {
 }
 
 func editorScroll() {
+	E.rx = 0
+	if E.cy < E.numrows {
+		E.rx = E.rows[E.cy].CxToRx(E.cx)
+	}
 	if E.cy < E.rowoff {
 		E.rowoff = E.cy
 	}
 	if E.cy >= E.rowoff+E.screenrows {
 		E.rowoff = E.cy - E.screenrows + 1
 	}
-	if E.cx < E.coloff {
-		E.coloff = E.cx
+	if E.rx < E.coloff {
+		E.coloff = E.rx
 	}
-	if E.cx >= E.coloff+E.screencols {
-		E.coloff = E.cx - E.screencols + 1
+	if E.rx >= E.coloff+E.screencols {
+		E.coloff = E.rx - E.screencols + 1
 	}
 }
 
@@ -308,7 +325,7 @@ func editorRefreshScreen() {
 	b.WriteString("\x1b[?25l") // hide cursor
 	b.WriteString("\x1b[H")    // put cursor at top left
 	editorDrawRows(&b)
-	fmt.Fprintf(&b, "\x1b[%d;%dH", E.cy-E.rowoff+1, E.cx-E.coloff+1) // move cursor to correct position
+	fmt.Fprintf(&b, "\x1b[%d;%dH", E.cy-E.rowoff+1, E.rx-E.coloff+1) // move cursor to correct position
 	b.WriteString("\x1b[?25h")                                       // show cursor
 	unix.Write(unix.Stdout, b.Bytes())
 }

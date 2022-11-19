@@ -92,7 +92,13 @@ func (r *Row) Update() {
 			r.render = append(r.render, b)
 		}
 	}
-	r.hl = make([]Highlight, len(r.render))
+	r.UpdateSyntax()
+}
+
+func (r *Row) UpdateSyntax() {
+	if len(r.hl) < len(r.render) {
+		r.hl = make([]Highlight, len(r.render))
+	}
 	for i, c := range r.render {
 		if '0' <= c && c <= '9' {
 			r.hl[i] = HighlightNumber
@@ -392,7 +398,7 @@ func editorFind() {
 			matches = matches[:0]
 			query := []byte(input)
 			for y, r := range E.rows {
-				r.Update() // clear highlight
+				r.UpdateSyntax() // clear highlight
 				var off int
 				for off < len(r.chars) {
 					i := bytes.Index(r.chars[off:], query)
@@ -436,7 +442,7 @@ func editorFind() {
 	E.debug = ""
 	// clear highlights
 	for _, r := range E.rows {
-		r.Update()
+		r.UpdateSyntax()
 	}
 }
 

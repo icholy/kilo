@@ -137,6 +137,9 @@ func editorSave() {
 		die("save failed: %v", err)
 	}
 	defer f.Close()
+	if err := f.Truncate(0); err != nil {
+		die("save failed: %v", err)
+	}
 	if err := writeRowsTo(f); err != nil {
 		die("save failed: %v", err)
 	}

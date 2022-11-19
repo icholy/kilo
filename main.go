@@ -24,12 +24,15 @@ type Highlight int
 const (
 	HighlightNormal Highlight = iota
 	HighlightNumber
+	HighlightMatch
 )
 
 func editorSyntaxToColor(hl Highlight) int {
 	switch hl {
 	case HighlightNumber:
 		return 31
+	case HighlightMatch:
+		return 34
 	default:
 		return 37
 	}
@@ -120,7 +123,7 @@ var E struct {
 	numrows    int
 	rowoff     int
 	coloff     int
-	rows       []Row
+	rows       []*Row
 	debug      string
 	status     string
 	statustime time.Time
@@ -383,17 +386,28 @@ func editorFind() {
 		case ArrowDown, ArrowRight:
 			matchidx++
 		default:
+			if len(input) == 0 {
+				return
+			}
 			matches = matches[:0]
 			query := []byte(input)
 			for y, r := range E.rows {
+				r.Update() // clear highlight
 				var off int
 				for off < len(r.chars) {
 					i := bytes.Index(r.chars[off:], query)
 					if i < 0 {
 						break
 					}
-					matches = append(matches, SearchMatch{cx: off + i, cy: y})
+					m := SearchMatch{cx: off + i, cy: y}
+					matches = append(matches, m)
 					off += i + 1
+
+					// highlight
+					rx := r.CxToRx(m.cx)
+					for x := rx; x < rx+len(query); x++ {
+						r.hl[x] = HighlightMatch
+					}
 				}
 			}
 		}
@@ -409,16 +423,21 @@ func editorFind() {
 			E.cy = m.cy
 			E.cx = m.cx
 			E.rowoff = E.numrows
-			E.debug = fmt.Sprintf("find: %d/%d", matchidx+1, len(matches))
 		}
 	})
+	// restore cursor if user hit escape
 	if !ok {
 		E.cx = cx
 		E.cy = cy
 		E.rowoff = rowoff
 		E.coloff = coloff
 	}
+	// clear the status line
 	E.debug = ""
+	// clear highlights
+	for _, r := range E.rows {
+		r.Update()
+	}
 }
 
 func editorSetStatus(format string, args ...any) {
@@ -465,7 +484,7 @@ func editorDrawStatusBar(b *bytes.Buffer) {
 }
 
 func editorInsertRow(at int, chars []byte) {
-	row := Row{chars: chars}
+	row := &Row{chars: chars}
 	row.Update()
 	E.rows = slices.Insert(E.rows, at, row)
 	E.numrows++
@@ -500,7 +519,7 @@ func editorDeleteChar() {
 	if E.cx == 0 && E.cy == 0 {
 		return
 	}
-	row := &E.rows[E.cy]
+	row := E.rows[E.cy]
 	if E.cx > 0 {
 		row.DeleteChar(E.cx - 1)
 		E.cx--
@@ -570,7 +589,7 @@ func editorProcessKeypress() {
 }
 
 func editorMoveCursor(c int) {
-	var row Row
+	var row *Row
 	if E.cy < E.numrows {
 		row = E.rows[E.cy]
 	}

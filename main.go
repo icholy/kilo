@@ -305,7 +305,7 @@ func editorReadKey() int {
 func editorPrompt(prompt string) (string, bool) {
 	var input []byte
 	for {
-		editorSetStatus("%s %s", prompt, input)
+		editorSetStatus("%s %s (ESC to cancel)", prompt, input)
 		editorRefreshScreen()
 		c := editorReadKey()
 		if c == DeleteKey || c == controlKey('h') || c == BackspaceKey {
@@ -322,6 +322,22 @@ func editorPrompt(prompt string) (string, bool) {
 			}
 		} else if unicode.IsPrint(rune(c)) && c < 128 {
 			input = append(input, byte(c))
+		}
+	}
+}
+
+func editorFind() {
+	input, ok := editorPrompt("Search:")
+	if !ok {
+		return
+	}
+	query := []byte(input)
+	for i, r := range E.rows {
+		if j := bytes.Index(r.chars, query); j >= 0 {
+			E.cy = i
+			E.cx = j
+			E.rowoff = E.numrows
+			break
 		}
 	}
 }
@@ -434,6 +450,8 @@ func editorProcessKeypress() {
 		unix.Exit(0)
 	case controlKey('s'):
 		editorSave()
+	case controlKey('f'):
+		editorFind()
 	case ArrowUp, ArrowDown, ArrowLeft, ArrowRight:
 		editorMoveCursor(c)
 	case PageUp:

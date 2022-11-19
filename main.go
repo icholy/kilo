@@ -22,6 +22,14 @@ type Row struct {
 	render []byte
 }
 
+func (r *Row) InsertChar(at, c int) {
+	if at < 0 || at > len(r.chars) {
+		at = len(r.chars)
+	}
+	r.chars = slices.Insert(r.chars, at, byte(c))
+	r.Update()
+}
+
 func (r *Row) Update() {
 	render := make([]byte, 0, len(r.chars))
 	for _, b := range r.chars {
@@ -278,7 +286,23 @@ func editorDrawStatusBar(b *bytes.Buffer) {
 		}
 		b.WriteString(message)
 	}
+}
 
+func editorAppendRow(s []byte) {
+	row := Row{
+		chars: s,
+	}
+	row.Update()
+	E.rows = append(E.rows, row)
+	E.numrows++
+}
+
+func editorInsertChar(c int) {
+	if E.cy == E.numrows {
+		editorAppendRow(nil)
+	}
+	E.rows[E.cy].InsertChar(E.cx, c)
+	E.cx++
 }
 
 func editorProcessKeypress() {
@@ -311,6 +335,8 @@ func editorProcessKeypress() {
 		}
 	case DeleteKey:
 		editorMoveCursor(ArrowLeft)
+	default:
+		editorInsertChar(c)
 	}
 }
 

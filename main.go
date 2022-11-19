@@ -11,12 +11,19 @@ import (
 
 const version = "0.0.1"
 
+type Row struct {
+	size  int
+	chars []byte
+}
+
 var E struct {
 	termios    unix.Termios
 	screenrows int
 	screencols int
 	cx         int
 	cy         int
+	numrows    int
+	row        Row
 }
 
 func enableRawMode() {
@@ -51,6 +58,12 @@ func die(format string, args ...any) {
 
 func initEditor() {
 	E.screenrows, E.screencols = getWindowSize()
+}
+
+func editorOpen() {
+	E.row.chars = []byte("Hello, world!")
+	E.row.size = len(E.row.chars)
+	E.numrows = 1
 }
 
 func getWindowSize() (rows, cols int) {
@@ -237,17 +250,25 @@ func editorRefreshScreen() {
 
 func editorDrawRows(b *bytes.Buffer) {
 	for y := 0; y < E.screenrows; y++ {
-		// print welcome screen
-		if y == E.screenrows/3 {
-			welcome := fmt.Sprintf("Kilo editor -- version %s", version)
-			if len(welcome) > E.screencols {
-				welcome = welcome[:E.screencols]
+		if y >= E.numrows {
+			// print welcome screen
+			if y == E.screenrows/3 {
+				welcome := fmt.Sprintf("Kilo editor -- version %s", version)
+				if len(welcome) > E.screencols {
+					welcome = welcome[:E.screencols]
+				}
+				padding := (E.screencols - len(welcome)) / 2
+				b.WriteString(strings.Repeat(" ", padding))
+				b.WriteString(welcome)
+			} else {
+				b.WriteString("~")
 			}
-			padding := (E.screencols - len(welcome)) / 2
-			b.WriteString(strings.Repeat(" ", padding))
-			b.WriteString(welcome)
 		} else {
-			b.WriteString("~")
+			line := E.row.chars
+			if len(line) > E.screencols {
+				line = line[:E.screencols]
+			}
+			b.Write(line)
 		}
 		b.WriteString("\x1b[K") // clear one line
 		if y < E.screenrows-1 {
@@ -259,8 +280,10 @@ func editorDrawRows(b *bytes.Buffer) {
 func main() {
 	// raw mode
 	enableRawMode()
-	initEditor()
 	defer restoreMode()
+	// setup
+	initEditor()
+	editorOpen()
 	// byte reader loop
 	for {
 		editorRefreshScreen()

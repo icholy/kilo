@@ -31,6 +31,19 @@ func (r *Row) InsertChar(at, c int) {
 	r.Update()
 }
 
+func (r *Row) DeleteChar(at int) {
+	if at < 0 || at > len(r.chars) {
+		return
+	}
+	r.chars = slices.Delete(r.chars, at, at+1)
+	r.Update()
+}
+
+func (r *Row) Append(chars []byte) {
+	r.chars = append(r.chars, chars...)
+	r.Update()
+}
+
 func (r *Row) Update() {
 	render := make([]byte, 0, len(r.chars))
 	for _, b := range r.chars {
@@ -327,6 +340,15 @@ func editorAppendRow(s []byte) {
 	E.dirty = true
 }
 
+func editorDeleteRow(at int) {
+	if at < 0 || at >= E.numrows {
+		return
+	}
+	E.rows = slices.Delete(E.rows, at, at+1)
+	E.numrows--
+	E.dirty = true
+}
+
 func editorInsertChar(c int) {
 	if E.cy == E.numrows {
 		editorAppendRow(nil)
@@ -334,6 +356,16 @@ func editorInsertChar(c int) {
 	E.rows[E.cy].InsertChar(E.cx, c)
 	E.cx++
 	E.dirty = true
+}
+
+func editorDeleteChar() {
+	if E.cy == E.numrows {
+		return
+	}
+	if E.cx > 0 {
+		E.rows[E.cy].DeleteChar(E.cx - 1)
+		E.cx--
+	}
 }
 
 func editorProcessKeypress() {
@@ -368,8 +400,11 @@ func editorProcessKeypress() {
 		}
 	case '\r':
 		// TODO
-	case DeleteKey, controlKey('h'), BackspaceKey:
-		// TODO
+	case DeleteKey:
+		editorMoveCursor(ArrowRight)
+		editorDeleteChar()
+	case controlKey('h'), BackspaceKey:
+		editorDeleteChar()
 	case controlKey('l'), '\x1b':
 		// ignore
 	default:

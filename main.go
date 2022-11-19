@@ -333,7 +333,9 @@ func editorPrompt(prompt string, callback func(input string, key int)) (string, 
 }
 
 func editorFind() {
-	editorPrompt("Search:", func(input string, c int) {
+	cx, cy := E.cx, E.cy
+	rowoff, coloff := E.rowoff, E.coloff
+	_, ok := editorPrompt("Search:", func(input string, c int) {
 		if c == '\r' || c == '\x1b' {
 			return
 		}
@@ -347,6 +349,12 @@ func editorFind() {
 			}
 		}
 	})
+	if !ok {
+		E.cx = cx
+		E.cy = cy
+		E.rowoff = rowoff
+		E.coloff = coloff
+	}
 }
 
 func editorSetStatus(format string, args ...any) {

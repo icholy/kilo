@@ -27,6 +27,13 @@ func (r *Row) Len() int {
 	return len(r.chars)
 }
 
+func (r *Row) Truncate(n int) {
+	if r.Len() > n {
+		r.chars = r.chars[:n]
+		r.Update()
+	}
+}
+
 func (r *Row) InsertChar(at, c int) {
 	if at < 0 || at > r.Len() {
 		at = r.Len()
@@ -135,10 +142,7 @@ func editorOpen(filename string) {
 	defer f.Close()
 	sc := bufio.NewScanner(f)
 	for sc.Scan() {
-		row := Row{chars: slices.Clone(sc.Bytes())}
-		row.Update()
-		E.rows = append(E.rows, row)
-		E.numrows++
+		editorInsertRow(E.numrows, slices.Clone(sc.Bytes()))
 	}
 	if err := sc.Err(); err != nil {
 		die("failed to read file: %s", err)
@@ -334,12 +338,10 @@ func editorDrawStatusBar(b *bytes.Buffer) {
 	}
 }
 
-func editorAppendRow(s []byte) {
-	row := Row{
-		chars: s,
-	}
+func editorInsertRow(at int, chars []byte) {
+	row := Row{chars: chars}
 	row.Update()
-	E.rows = append(E.rows, row)
+	E.rows = slices.Insert(E.rows, at, row)
 	E.numrows++
 	E.dirty = true
 }
@@ -358,7 +360,7 @@ func editorDeleteRow(at int) {
 
 func editorInsertChar(c int) {
 	if E.cy == E.numrows {
-		editorAppendRow(nil)
+		editorInsertRow(E.numrows, nil)
 	}
 	E.rows[E.cy].InsertChar(E.cx, c)
 	E.cx++
@@ -382,6 +384,17 @@ func editorDeleteChar() {
 		editorDeleteRow(E.cy)
 		E.cy--
 	}
+}
+
+func editorInsertNewline() {
+	if E.cx == 0 {
+		editorInsertRow(E.cy, nil)
+	} else {
+		editorInsertRow(E.cy+1, E.rows[E.cy].chars[E.cx:])
+		E.rows[E.cy].Truncate(E.cx)
+	}
+	E.cy++
+	E.cx = 0
 }
 
 func editorProcessKeypress() {
@@ -415,7 +428,7 @@ func editorProcessKeypress() {
 			E.cx = E.rows[E.cy].Len()
 		}
 	case '\r':
-		// TODO
+		editorInsertNewline()
 	case DeleteKey:
 		editorMoveCursor(ArrowRight)
 		editorDeleteChar()

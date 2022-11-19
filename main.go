@@ -250,6 +250,9 @@ func editorMoveCursor(c int) {
 	case ArrowLeft:
 		if E.cx > 0 {
 			E.cx--
+		} else if E.cy > 0 {
+			E.cy--
+			E.cx = len(E.rows[E.cy].chars)
 		}
 	case ArrowRight:
 		if row.chars != nil && E.cx < len(row.chars) {
@@ -257,7 +260,7 @@ func editorMoveCursor(c int) {
 		}
 	}
 
-	if E.cy >= E.numrows {
+	if E.cy < E.numrows {
 		row := E.rows[E.cy]
 		if E.cx > len(row.chars) {
 			E.cx = len(row.chars)

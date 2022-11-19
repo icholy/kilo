@@ -1,9 +1,12 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
+	"flag"
 	"fmt"
 	"log"
+	"os"
 	"strings"
 
 	"golang.org/x/sys/unix"
@@ -60,10 +63,22 @@ func initEditor() {
 	E.screenrows, E.screencols = getWindowSize()
 }
 
-func editorOpen() {
-	E.row.chars = []byte("Hello, world!")
-	E.row.size = len(E.row.chars)
-	E.numrows = 1
+func editorOpen(filename string) {
+	f, err := os.Open(filename)
+	if err != nil {
+		die("failed to open file: %s", err)
+	}
+	defer f.Close()
+	sc := bufio.NewScanner(f)
+	for sc.Scan() {
+		E.row.chars = sc.Bytes()
+		E.row.size = len(E.row.chars)
+		E.numrows = 1
+		break
+	}
+	if err := sc.Err(); err != nil {
+		die("failed to read file: %s", err)
+	}
 }
 
 func getWindowSize() (rows, cols int) {
@@ -278,12 +293,13 @@ func editorDrawRows(b *bytes.Buffer) {
 }
 
 func main() {
+	flag.Parse()
 	// raw mode
 	enableRawMode()
 	defer restoreMode()
 	// setup
 	initEditor()
-	editorOpen()
+	editorOpen(flag.Arg(0))
 	// byte reader loop
 	for {
 		editorRefreshScreen()

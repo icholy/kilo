@@ -59,6 +59,7 @@ var E struct {
 	coloff     int
 	rows       []Row
 	status     string
+	filename   string
 }
 
 func enableRawMode() {
@@ -97,6 +98,7 @@ func initEditor() {
 }
 
 func editorOpen(filename string) {
+	E.filename = filename
 	f, err := os.Open(filename)
 	if err != nil {
 		die("failed to open file: %s", err)
@@ -242,11 +244,13 @@ func editorReadKey() int {
 func editorDrawStatusBar(b *bytes.Buffer) {
 	b.WriteString("\x1b[7m")
 	var line strings.Builder
-
+	filename := E.filename
+	if filename == "" {
+		filename = "[No Name]"
+	}
+	fmt.Fprintf(&line, "%.20s - %d lines", filename, E.numrows)
 	if E.status != "" {
-		line.WriteString(E.status)
-	} else {
-		line.WriteString("status bar")
+		line.WriteString(" " + E.status)
 	}
 	b.WriteString(line.String())
 	for i := line.Len(); i < E.screencols; i++ {
@@ -327,9 +331,6 @@ func editorMoveCursor(c int) {
 }
 
 func editorScroll() {
-
-	E.status = strings.TrimSpace(string(E.rows[0].chars))
-
 	E.rx = 0
 	if E.cy < E.numrows {
 		E.rx = E.rows[E.cy].CxToRx(E.cx)

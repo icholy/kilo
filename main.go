@@ -308,7 +308,11 @@ func editorPrompt(prompt string) (string, bool) {
 		editorSetStatus("%s %s", prompt, input)
 		editorRefreshScreen()
 		c := editorReadKey()
-		if c == '\x1b' {
+		if c == DeleteKey || c == controlKey('h') || c == BackspaceKey {
+			if len(input) > 0 {
+				input = input[:len(input)-1]
+			}
+		} else if c == '\x1b' {
 			editorSetStatus("")
 			return "", false
 		} else if c == '\r' {

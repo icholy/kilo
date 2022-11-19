@@ -15,7 +15,23 @@ import (
 const version = "0.0.1"
 
 type Row struct {
-	chars []byte
+	chars  []byte
+	render []byte
+}
+
+func (r *Row) Update() {
+	render := make([]byte, 0, len(r.chars))
+	for _, b := range r.chars {
+		if b == '\t' {
+			render = append(render, ' ')
+			for len(render)%8 != 0 {
+				render = append(render, ' ')
+			}
+		} else {
+			render = append(render, b)
+		}
+	}
+	r.render = render
 }
 
 var E struct {
@@ -72,9 +88,9 @@ func editorOpen(filename string) {
 	defer f.Close()
 	sc := bufio.NewScanner(f)
 	for sc.Scan() {
-		E.rows = append(E.rows, Row{
-			chars: sc.Bytes(),
-		})
+		row := Row{chars: sc.Bytes()}
+		row.Update()
+		E.rows = append(E.rows, row)
 		E.numrows++
 	}
 	if err := sc.Err(); err != nil {
@@ -314,7 +330,7 @@ func editorDrawRows(b *bytes.Buffer) {
 				b.WriteString("~")
 			}
 		} else {
-			line := E.rows[filerow].chars
+			line := E.rows[filerow].render
 			coloff := E.coloff
 			if coloff >= len(line) {
 				coloff = 0

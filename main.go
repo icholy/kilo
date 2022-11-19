@@ -25,14 +25,23 @@ const (
 	HighlightNormal Highlight = iota
 	HighlightNumber
 	HighlightMatch
+	HighlightKeyword
+	HighlightType
+	HighlightString
 )
 
 func editorSyntaxToColor(hl Highlight) int {
 	switch hl {
 	case HighlightNumber:
 		return 31
+	case HighlightString:
+		return 33
 	case HighlightMatch:
 		return 34
+	case HighlightKeyword:
+		return 35
+	case HighlightType:
+		return 36
 	default:
 		return 37
 	}
@@ -76,6 +85,46 @@ func (r *Row) Append(chars []byte) {
 	r.Update()
 }
 
+func isDigit(c byte) bool {
+	return '0' <= c && c <= '9'
+}
+
+func isDelim(c byte) bool {
+	if unicode.IsSpace(rune(c)) || c == 0 {
+		return true
+	}
+	switch c {
+	case ',', '.', '(', ')', '+', '-', '/', '*', '=', '~', '%', '<', '>', '[', ']', '^', ':':
+		return true
+	default:
+		return false
+	}
+}
+
+func isKeyword(token []byte) bool {
+	switch string(token) {
+	case "if", "switch", "case", "func", "then", "for", "var", "type", "interface", "const",
+		"return", "struct", "default", "iota", "nil", "package", "import", "map", "break", "continue":
+		return true
+	default:
+		return false
+	}
+}
+
+func isType(token []byte) bool {
+	switch string(token) {
+	case "int", "int8", "int16", "int32", "int64",
+		"uint", "uint8", "uint16", "uint32", "uint64",
+		"float32", "float64",
+		"byte", "rune", "bool", "string",
+		"complex64", "complex128",
+		"any", "error", "comparable":
+		return true
+	default:
+		return false
+	}
+}
+
 func (r *Row) Update() {
 	if r.render == nil {
 		r.render = make([]byte, 0, r.Len())
@@ -99,11 +148,56 @@ func (r *Row) UpdateSyntax() {
 	if len(r.hl) < len(r.render) {
 		r.hl = make([]Highlight, len(r.render))
 	}
+	var quote byte
+	var token []byte
+	var tokenidx int
 	for i, c := range r.render {
-		if '0' <= c && c <= '9' {
-			r.hl[i] = HighlightNumber
-		} else {
-			r.hl[i] = HighlightNormal
+		r.hl[i] = HighlightNormal
+		switch {
+		case quote != 0 || c == '"' || c == '\'':
+			r.hl[i] = HighlightString
+			if quote == 0 {
+				quote = c
+			} else if quote == c {
+				quote = 0
+			}
+		case isDelim(c):
+			if len(token) > 0 {
+				hl := HighlightNormal
+				if isKeyword(token) {
+					hl = HighlightKeyword
+				}
+				if isType(token) {
+					hl = HighlightType
+				}
+				for j := 0; j < len(token); j++ {
+					r.hl[tokenidx+j] = hl
+				}
+			}
+			token = token[:0]
+		case isDigit(c):
+			if len(token) > 0 {
+				token = append(token, c)
+			} else {
+				r.hl[i] = HighlightNumber
+			}
+		default:
+			if len(token) == 0 {
+				tokenidx = i
+			}
+			token = append(token, c)
+		}
+	}
+	if len(token) > 0 {
+		hl := HighlightNormal
+		if isKeyword(token) {
+			hl = HighlightKeyword
+		}
+		if isType(token) {
+			hl = HighlightType
+		}
+		for j := 0; j < len(token); j++ {
+			r.hl[tokenidx+j] = hl
 		}
 	}
 }

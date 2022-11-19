@@ -10,6 +10,7 @@ import (
 	"os"
 	"strings"
 	"time"
+	"unicode"
 
 	"golang.org/x/exp/slices"
 	"golang.org/x/sys/unix"
@@ -151,8 +152,7 @@ func editorOpen(filename string) {
 
 func editorSave() {
 	if E.filename == "" {
-		editorSetStatus("no filename")
-		return
+		E.filename = editorPrompt("Save as:")
 	}
 	f, err := os.OpenFile(E.filename, os.O_RDWR|os.O_CREATE, 0644)
 	if err != nil {
@@ -296,6 +296,23 @@ func editorReadKey() int {
 		}
 	}
 	return c
+}
+
+func editorPrompt(prompt string) string {
+	var input []byte
+	for {
+		editorSetStatus("%s %s", prompt, input)
+		editorRefreshScreen()
+		c := editorReadKey()
+		if c == '\r' {
+			if len(input) != 0 {
+				editorSetStatus("")
+				return string(input)
+			}
+		} else if unicode.IsPrint(rune(c)) && c < 128 {
+			input = append(input, byte(c))
+		}
+	}
 }
 
 func editorSetStatus(format string, args ...any) {

@@ -152,7 +152,11 @@ func editorOpen(filename string) {
 
 func editorSave() {
 	if E.filename == "" {
-		E.filename = editorPrompt("Save as:")
+		name, ok := editorPrompt("Save as:")
+		if !ok {
+			return
+		}
+		E.filename = name
 	}
 	f, err := os.OpenFile(E.filename, os.O_RDWR|os.O_CREATE, 0644)
 	if err != nil {
@@ -298,16 +302,19 @@ func editorReadKey() int {
 	return c
 }
 
-func editorPrompt(prompt string) string {
+func editorPrompt(prompt string) (string, bool) {
 	var input []byte
 	for {
 		editorSetStatus("%s %s", prompt, input)
 		editorRefreshScreen()
 		c := editorReadKey()
-		if c == '\r' {
+		if c == '\x1b' {
+			editorSetStatus("")
+			return "", false
+		} else if c == '\r' {
 			if len(input) != 0 {
 				editorSetStatus("")
-				return string(input)
+				return string(input), true
 			}
 		} else if unicode.IsPrint(rune(c)) && c < 128 {
 			input = append(input, byte(c))

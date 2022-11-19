@@ -71,6 +71,7 @@ var E struct {
 	status     string
 	statustime time.Time
 	filename   string
+	dirty      bool
 }
 
 func enableRawMode() {
@@ -146,6 +147,7 @@ func editorSave() {
 	if err := f.Close(); err != nil {
 		die("save failed: %v", err)
 	}
+	E.dirty = false
 	editorSetStatus("saved %s", E.filename)
 }
 
@@ -288,6 +290,9 @@ func editorDrawStatusBar(b *bytes.Buffer) {
 		filename = "[No Name]"
 	}
 	status := fmt.Sprintf("%.20s - line %d/%d", filename, E.cy+1, E.numrows)
+	if E.dirty {
+		status += " (modified)"
+	}
 	if len(status) > E.screencols {
 		status = status[:E.screencols]
 	}
@@ -319,6 +324,7 @@ func editorAppendRow(s []byte) {
 	row.Update()
 	E.rows = append(E.rows, row)
 	E.numrows++
+	E.dirty = true
 }
 
 func editorInsertChar(c int) {
@@ -327,6 +333,7 @@ func editorInsertChar(c int) {
 	}
 	E.rows[E.cy].InsertChar(E.cx, c)
 	E.cx++
+	E.dirty = true
 }
 
 func editorProcessKeypress() {

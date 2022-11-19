@@ -648,7 +648,15 @@ func editorDrawRows(b *bytes.Buffer) {
 			if len(line) > E.screencols {
 				line = line[:E.screencols]
 			}
-			b.Write(line)
+			for _, c := range line {
+				if '0' <= c && c <= '9' {
+					b.WriteString("\x1b[31m")
+					b.WriteByte(c)
+					b.WriteString("\x1b[39m")
+				} else {
+					b.WriteByte(c)
+				}
+			}
 		}
 		b.WriteString("\x1b[K") // clear one line
 		b.WriteString("\r\n")

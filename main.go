@@ -495,7 +495,7 @@ func main() {
 		editorOpen(flag.Arg(0))
 	}
 	// show help message
-	editorSetStatus("HELP: Ctrl-Q = quit")
+	editorSetStatus("HELP: Ctrl-S = save | Ctrl-Q = quit")
 	// byte reader loop
 	for {
 		editorRefreshScreen()

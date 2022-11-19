@@ -168,7 +168,8 @@ func controlKey(c byte) int {
 }
 
 const (
-	ArrowLeft = iota + 1000
+	BackspaceKey = 127
+	ArrowLeft    = iota + 1000
 	ArrowRight
 	ArrowUp
 	ArrowDown
@@ -333,8 +334,12 @@ func editorProcessKeypress() {
 		if E.cy < E.numrows {
 			E.cx = len(E.rows[E.cy].chars)
 		}
-	case DeleteKey:
-		editorMoveCursor(ArrowLeft)
+	case '\r':
+		// TODO
+	case DeleteKey, controlKey('h'), BackspaceKey:
+		// TODO
+	case controlKey('l'), '\x1b':
+		// ignore
 	default:
 		editorInsertChar(c)
 	}

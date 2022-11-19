@@ -390,6 +390,7 @@ func editorFind() {
 		E.rowoff = rowoff
 		E.coloff = coloff
 	}
+	E.debug = ""
 }
 
 func editorSetStatus(format string, args ...any) {

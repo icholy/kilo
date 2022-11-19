@@ -299,7 +299,9 @@ func main() {
 	defer restoreMode()
 	// setup
 	initEditor()
-	editorOpen(flag.Arg(0))
+	if flag.NArg() > 0 {
+		editorOpen(flag.Arg(0))
+	}
 	// byte reader loop
 	for {
 		editorRefreshScreen()
